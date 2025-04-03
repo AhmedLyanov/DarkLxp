@@ -34,11 +34,12 @@ export default{
 <style scoped>
 .main__content_login{
     width: 100%;
-    height: 100%;
+    height: 100vh;
     display: flex;
     justify-content: center;
-    padding: 15px;
+    padding: 90px 15px 15px 15px; 
     background-color: #333333;
+
 }
 
 .login__form{
@@ -111,6 +112,10 @@ export default{
     width: 100%;
 }
 
+
+.get_api_button_login:hover{
+    background-color: #3951a8;
+}
 .login__form form{
     display: grid;
     gap: 30px;

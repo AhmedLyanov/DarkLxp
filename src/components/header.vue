@@ -20,7 +20,7 @@ export default {
 <style>
 header {
     display: flex;
-    position: sticky;
+    position: fixed;
     top: 0px;
     width: 100%;
     height: 72px;
