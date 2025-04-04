@@ -19,11 +19,8 @@ export default {
         }
     },
     created() {
-        // Создаем аудио элемент при инициализации компонента
         this.audio = new Audio(musicFile);
-        this.audio.loop = true;
-        
-        // Для корректной работы в iOS/Safari
+        this.audio.loop = true
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const source = this.audioContext.createMediaElementSource(this.audio);
         source.connect(this.audioContext.destination);
@@ -32,10 +29,9 @@ export default {
         async toggleMusic() {
             if (this.isPlaying) {
                 await this.audio.pause();
-                this.audioContext.suspend(); // Приостанавливаем аудиоконтекст
+                this.audioContext.suspend(); 
             } else {
                 try {
-                    // В iOS требуется явное разрешение на воспроизведение
                     if (this.audioContext.state === 'suspended') {
                         await this.audioContext.resume();
                     }
@@ -61,7 +57,6 @@ export default {
 </script>
 
 <style scoped>
-/* Ваши стили остаются без изменений */
 .button_set_music {
     width: 60px;
     height: 60px;
