@@ -1,36 +1,51 @@
 <template>
     <div class="main__content_login">
-        <div class="login__form_container">
-            <div class="login__form">
-                <form>
-                    <div class="title_form">
-                        <h1>{{ constants.SET_DATA_LOGIN }}</h1>
-                    </div>
-                    <div class="form-group">
-                        <input type="email" class="form-control" placeholder="E-mail" id="email"required>
-                    </div>
-                    <div class="form-group">
-                        <input type="password" class="form-control" placeholder="Пароль" id="password">
-                    </div>
-                    <button type="submit" class="get_api_button_login">{{constants.LOGIN}}</button>
-                </form>
+      <div class="login__form_container">
+        <div class="login__form">
+          <form @submit.prevent="handleSubmit">
+            <div class="title_form">
+              <h1>{{ constants.SET_DATA_LOGIN }}</h1>
             </div>
+            <div class="form-group">
+              <input v-model="email" type="email" placeholder="E-mail" required>
+            </div>
+            <div class="form-group">
+              <input v-model="password" type="password" placeholder="Пароль" required>
+            </div>
+            <button type="submit" class="get_api_button_login" :disabled="loading">
+              {{ loading ? 'Вход...' : constants.LOGIN }}
+            </button>
+            <div v-if="error" class="error-message">{{ error }}</div>
+          </form>
         </div>
+      </div>
     </div>
-</template>
-
-<script>
-import constants from '../constants/constants.js'
-export default{
-    data() {
-       return{
-        constants
-       }
-    },
-
-}
-</script>
-
+  </template>
+  
+  <script setup>
+  import { ref } from 'vue'
+  import { useAuthStore } from '../stores/auth'
+  import constants from '../constants/constants.js'
+  
+  const email = ref('')
+  const password = ref('')
+  const loading = ref(false)
+  const error = ref(null)
+  const authStore = useAuthStore()
+  
+  const handleSubmit = async () => {
+    try {
+      loading.value = true
+      error.value = null
+      await authStore.login(email.value, password.value)
+    } catch (err) {
+      error.value = err.message || 'Ошибка входа'
+    } finally {
+      loading.value = false
+    }
+  }
+  </script>
+  
 <style scoped>
 .main__content_login{
     width: 100%;
@@ -51,7 +66,16 @@ export default{
     background-color: #252424;
     border-radius: 8px;
 }
-
+.error-message{
+    font-family: Inter, sans-serif;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    color: #ff0000;
+    margin-top: 5px;
+    text-align: center;
+}
 .title_form{
     font-family: Inter, sans-serif;
     font-style: normal;

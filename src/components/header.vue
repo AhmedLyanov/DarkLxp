@@ -1,9 +1,12 @@
 <template>
     <header>
         <div class="dark__newlxp_header_box">
-            <div class="logo__box">
-                <img src="../assets/media/DarkLxpLogo.svg" alt="">
-            </div>
+            <RouterLink to="/">
+                <div class="logo__box">
+                    <img src="../assets/media/DarkLxpLogo.svg" alt="">
+                </div>
+            </RouterLink>
+            
         </div>
     </header>
 </template>
