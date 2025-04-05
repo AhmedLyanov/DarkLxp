@@ -1,50 +1,52 @@
 <template>
-    <div class="main__content_login">
-      <div class="login__form_container">
-        <div class="login__form">
-          <form @submit.prevent="handleSubmit">
-            <div class="title_form">
-              <h1>{{ constants.SET_DATA_LOGIN }}</h1>
-            </div>
-            <div class="form-group">
-              <input v-model="email" type="email" placeholder="E-mail" required>
-            </div>
-            <div class="form-group">
-              <input v-model="password" type="password" placeholder="Пароль" required>
-            </div>
-            <button type="submit" class="get_api_button_login" :disabled="loading">
-              {{ loading ? 'Вход...' : constants.LOGIN }}
-            </button>
-            <div v-if="error" class="error-message">{{ error }}</div>
-          </form>
-        </div>
+  <div class="main__content_login">
+    <div class="login__form_container">
+      <div class="login__form">
+        <form @submit.prevent="handleSubmit">
+          <div class="title_form">
+            <h1>{{ constants.SET_DATA_LOGIN }}</h1>
+          </div>
+          <div class="form-group">
+            <input v-model="email" type="email" placeholder="E-mail" @input="checkEmail" required>
+          </div>
+          <div class="form-group">
+            <input v-model="password" type="password" placeholder="Пароль" required>
+          </div>
+          <button type="submit" class="get_api_button_login" :disabled="loading">
+            {{ loading ? 'Вход...' : constants.LOGIN }}
+          </button>
+          <div v-if="error" class="error-message">{{ error }}</div>
+        </form>
       </div>
     </div>
-  </template>
-  
-  <script setup>
-  import { ref } from 'vue'
-  import { useAuthStore } from '../stores/auth'
-  import constants from '../constants/constants.js'
-  
-  const email = ref('')
-  const password = ref('')
-  const loading = ref(false)
-  const error = ref(null)
-  const authStore = useAuthStore()
-  
-  const handleSubmit = async () => {
-    try {
+  </div>
+</template>
+<script setup>
+import { ref } from 'vue'
+import { useAuthStore } from '../stores/auth'
+import constants from '../constants/constants.js'
+const email = ref('')
+const password = ref('')
+const loading = ref(false)
+const error = ref(null)
+const authStore = useAuthStore()
+const handleSubmit = async () => {
+  try {
       loading.value = true
       error.value = null
       await authStore.login(email.value, password.value)
-    } catch (err) {
+  } catch (err) {
       error.value = err.message || 'Ошибка входа'
-    } finally {
+  } finally {
       loading.value = false
-    }
   }
-  </script>
+}
+const checkEmail = () => {
+  if (email.value.includes('@') && !email.value.endsWith('@magas.ithub.ru')) {
+      email.value = email.value.split('@')[0] + '@magas.ithub.ru'
+  }
+}
+</script>
   
 <style scoped>
 .main__content_login{
