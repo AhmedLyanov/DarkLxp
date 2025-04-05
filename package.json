@@ -2,7 +2,7 @@
   "name": "darklxp",
   "productName": "darklxp",
   "version": "1.0.0",
-  "description": "dark asdie website newlxp.ru",
+  "description": "darklxp",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
