@@ -3,14 +3,23 @@
         <div class="result-container">
             <div class="header">
                 <h1>{{ result_constants.TITLE_TASKS }}</h1>
-                <button @click="handleLogout" class="logout-button">
-                    <span>{{ result_constants.LOGOUT }}</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M16 17L21 12L16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
+                <div class="header-right">
+                    <button @click="toggleNotifications" class="notifications-button">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span v-if="unreadNotificationsCount > 0" class="notification-badge">{{ unreadNotificationsCount }}</span>
+                    </button>
+                    <button @click="handleLogout" class="logout-button">
+                        <span>{{ result_constants.LOGOUT }}</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16 17L21 12L16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div v-if="loading" class="loading">
@@ -19,6 +28,29 @@
             </div>
             
             <div v-else>
+                <!-- Notifications panel -->
+                <div v-if="showNotifications" class="notifications-panel">
+                    <div class="notifications-header">
+                        <h3>Уведомления</h3>
+                        <button @click="markAllAsRead" class="mark-read-button">Отметить все как прочитанные</button>
+                    </div>
+                    <div v-if="notifications.length > 0" class="notifications-list">
+                        <div v-for="notification in notifications" :key="notification.id" 
+                             class="notification-item" :class="{ 'unread': !notification.isRead }"
+                             @click="viewNotification(notification)">
+                            <div class="notification-content">
+                                <h4>{{ notification.title }}</h4>
+                                <p>{{ notification.body }}</p>
+                                <span class="notification-time">{{ formatNotificationDate(notification.createdAt) }}</span>
+                            </div>
+                            <div v-if="!notification.isRead" class="unread-dot"></div>
+                        </div>
+                    </div>
+                    <div v-else class="no-notifications">
+                        Нет уведомлений
+                    </div>
+                </div>
+
                 <div class="filters">
                     <div class="select-wrapper">
                         <select v-model="pageSize" @change="fetchTasks" class="custom-select">
@@ -96,6 +128,23 @@
                     </div>
                 </div>
             </div>
+
+            <div v-if="selectedNotification" class="modal">
+                <div class="modal-content">
+                    <span class="close" @click="closeNotification">&times;</span>
+                    <h2>{{ selectedNotification.title }}</h2>
+                    <div class="modal-body">
+                        <p>{{ selectedNotification.body }}</p>
+                        <div class="notification-meta">
+                            <span>Получено: {{ formatNotificationDate(selectedNotification.createdAt) }}</span>
+                            <span>Статус: {{ selectedNotification.isRead ? 'Прочитано' : 'Не прочитано' }}</span>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-button close-button" @click="closeNotification">Закрыть</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -111,6 +160,7 @@ export default {
         const authStore = useAuthStore()
         const router = useRouter()
         
+        // State
         const tasks = ref([])
         const loading = ref(true)
         const currentPage = ref(1)
@@ -118,12 +168,23 @@ export default {
         const totalPages = ref(1)
         const selectedTask = ref(null)
         const taskDetailsHtml = ref('')
+        const notifications = ref([])
+        const showNotifications = ref(false)
+        const selectedNotification = ref(null)
+        const error = ref(null)
         
         const apiUrl = 'https://api.newlxp.ru/graphql'
 
+        // Computed
+        const unreadNotificationsCount = computed(() => {
+            return notifications.value.filter(n => !n.isRead).length
+        })
+
+        // Methods
         const fetchTasks = async () => {
             try {
                 loading.value = true
+                error.value = null
                 
                 if (!authStore.user?.id) {
                     throw new Error('User ID not found')
@@ -192,14 +253,66 @@ export default {
                 
                 tasks.value = data.data.studentAvailableTasks.items
                 totalPages.value = data.data.studentAvailableTasks.totalPages
-            } catch (error) {
-                console.error('Fetch tasks error:', error)
-                error.value = 'Ошибка загрузки заданий: ' + error.message
+            } catch (err) {
+                console.error('Fetch tasks error:', err)
+                error.value = 'Ошибка загрузки заданий: ' + err.message
             } finally {
                 loading.value = false
             }
         }
-        
+
+        const fetchNotifications = async () => {
+            try {
+                const query = `
+                    query GetNotifications($input: NotificationsInput!) {
+                        notifications(input: $input) {
+                            items {
+                                isRead
+                                id
+                                title
+                                body
+                                createdAt
+                            }
+                            hasMore
+                            page
+                            perPage
+                            total
+                            totalPages
+                        }
+                    }
+                `
+                
+                const variables = {
+                    input: {
+                        filters: {},
+                        page: 1,
+                        pageSize: 10
+                    }
+                }
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authStore.token}`
+                    },
+                    body: JSON.stringify({ query, variables })
+                })
+                
+                const data = await response.json()
+                
+                if (data.errors) {
+                    throw new Error(data.errors[0].message)
+                }
+                
+                notifications.value = data.data.notifications.items
+                authStore.unreadNotificationsCount = data.data.notifications.items.filter(n => !n.isRead).length
+            } catch (err) {
+                console.error('Fetch notifications error:', err)
+                error.value = 'Ошибка загрузки уведомлений: ' + err.message
+            }
+        }
+
         const fetchTaskDetails = async (task) => {
             try {
                 const query = `
@@ -245,12 +358,12 @@ export default {
                 const taskDetails = data.data.getDisciplineTaskBlockByTopicIdAndContentId
                 taskDetailsHtml.value = formatTaskDetails(taskDetails)
                 selectedTask.value = task
-            } catch (error) {
-                console.error('Fetch task details error:', error)
-                alert('Ошибка загрузки деталей задания: ' + error.message)
+            } catch (err) {
+                console.error('Fetch task details error:', err)
+                error.value = 'Ошибка загрузки деталей задания: ' + err.message
             }
         }
-        
+
         const formatTaskDetails = (task) => {
             let html = `<div class="task-meta-grid">
                 <div class="meta-item">
@@ -291,7 +404,7 @@ export default {
             
             return html
         }
-        
+
         const formatDate = (dateString) => {
             if (!dateString) return 'Не указан'
             const date = new Date(dateString)
@@ -303,7 +416,19 @@ export default {
                 minute: '2-digit'
             })
         }
-        
+
+        const formatNotificationDate = (dateString) => {
+            if (!dateString) return ''
+            const date = new Date(dateString)
+            return date.toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            })
+        }
+
         const daysLeft = (dateString) => {
             if (!dateString) return null
             const deadline = new Date(dateString)
@@ -312,44 +437,138 @@ export default {
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
             return diffDays > 0 ? diffDays : 0
         }
-        
+
         const dayForm = (days) => {
             if (days % 10 === 1 && days % 100 !== 11) return 'день'
             if ([2, 3, 4].includes(days % 10) && ![12, 13, 14].includes(days % 100)) return 'дня'
             return 'дней'
         }
-        
+
+        const markNotificationAsRead = async (notificationId) => {
+            try {
+                const query = `
+                    mutation MarkNotificationAsRead($input: MarkNotificationAsReadInput!) {
+                        markNotificationAsRead(input: $input) {
+                            success
+                        }
+                    }
+                `
+                
+                const variables = {
+                    input: {
+                        notificationId
+                    }
+                }
+                
+                await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authStore.token}`
+                    },
+                    body: JSON.stringify({ query, variables })
+                })
+                
+                const index = notifications.value.findIndex(n => n.id === notificationId)
+                if (index !== -1) {
+                    notifications.value[index].isRead = true
+                }
+            } catch (err) {
+                console.error('Mark notification as read error:', err)
+            }
+        }
+
+        const markAllAsRead = async () => {
+            try {
+                const unreadIds = notifications.value
+                    .filter(n => !n.isRead)
+                    .map(n => n.id)
+                
+                if (unreadIds.length === 0) return
+                
+                const query = `
+                    mutation MarkNotificationsAsRead($input: MarkNotificationsAsReadInput!) {
+                        markNotificationsAsRead(input: $input) {
+                            success
+                        }
+                    }
+                `
+                
+                const variables = {
+                    input: {
+                        notificationIds: unreadIds
+                    }
+                }
+                
+                await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authStore.token}`
+                    },
+                    body: JSON.stringify({ query, variables })
+                })
+                
+                notifications.value = notifications.value.map(n => ({
+                    ...n,
+                    isRead: true
+                }))
+            } catch (err) {
+                console.error('Mark all notifications as read error:', err)
+            }
+        }
+
         const viewTaskDetails = (task) => {
             fetchTaskDetails(task)
         }
-        
+
+        const viewNotification = (notification) => {
+            selectedNotification.value = notification
+            if (!notification.isRead) {
+                markNotificationAsRead(notification.id)
+            }
+        }
+
+        const closeNotification = () => {
+            selectedNotification.value = null
+        }
+
+        const toggleNotifications = () => {
+            showNotifications.value = !showNotifications.value
+            if (showNotifications.value && notifications.value.length === 0) {
+                fetchNotifications()
+            }
+        }
+
         const nextPage = () => {
             if (currentPage.value < totalPages.value) {
                 currentPage.value++
                 fetchTasks()
             }
         }
-        
+
         const prevPage = () => {
             if (currentPage.value > 1) {
                 currentPage.value--
                 fetchTasks()
             }
         }
-        
+
         const handleLogout = () => {
             authStore.logout()
             router.push('/login')
         }
-        
+
+        // Lifecycle hooks
         onMounted(() => {
             if (!authStore.token) {
                 router.push('/login')
             } else {
                 fetchTasks()
+                fetchNotifications()
             }
         })
-        
+
         return {
             tasks,
             loading,
@@ -358,14 +577,27 @@ export default {
             totalPages,
             selectedTask,
             taskDetailsHtml,
+            notifications,
+            showNotifications,
+            selectedNotification,
+            unreadNotificationsCount,
+            error,
+            result_constants,
+            
+       
             fetchTasks,
+            fetchNotifications,
+            markAllAsRead,
+            viewTaskDetails,
+            viewNotification,
+            closeNotification,
+            toggleNotifications,
             nextPage,
             prevPage,
             formatDate,
+            formatNotificationDate,
             daysLeft,
             dayForm,
-            viewTaskDetails,
-            result_constants,
             handleLogout
         }
     }
@@ -373,6 +605,138 @@ export default {
 </script>
 
 <style scoped>
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.notifications-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #ff4757;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.notifications-panel {
+    position: absolute;
+    right: 20px;
+    top: 70px;
+    width: 350px;
+    max-height: 500px;
+    overflow-y: auto;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    padding: 15px;
+}
+
+.notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.mark-read-button {
+    background: none;
+    border: none;
+    color: #3498db;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.notification-item {
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+    background-color: #f1f8ff;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-content h4 {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+}
+
+.notification-content p {
+    margin: 0 0 5px 0;
+    font-size: 13px;
+    color: #555;
+}
+
+.notification-time {
+    font-size: 11px;
+    color: #999;
+}
+
+.unread-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #3498db;
+    border-radius: 50%;
+    margin-left: 10px;
+}
+
+.no-notifications {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+}
+
+.notification-meta {
+    margin-top: 15px;
+    font-size: 13px;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+}
+
+
 .main__content_tasks {
     width: 100%;
     min-height: 100vh;

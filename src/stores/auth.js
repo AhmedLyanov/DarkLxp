@@ -6,6 +6,7 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref(null)
   const user = ref(null)
   const router = useRouter()
+  const unreadNotificationsCount = ref(0)
 
   const login = async (email, password) => {
     try {
@@ -50,5 +51,5 @@ export const useAuthStore = defineStore('auth', () => {
     router.push('/login')
   }
 
-  return { token, user, login, logout }
+  return { token, user, login, logout, unreadNotificationsCount }
 })
