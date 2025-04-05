@@ -134,7 +134,7 @@
         <div class="notifications-container">
             <div class="contact_dev">
                 <div class="github_repository">
-                    <a href="https://yandex.ru/images/search?from=tabbar&text=natsuki%20ddlc%20art" target="_blank" >
+                    <a href="" target="_blank" >
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"
                             xmlns="http://www.w3.org/2000/svg">
                             <path fill-rule="evenodd" clip-rule="evenodd"
