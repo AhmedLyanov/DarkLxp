@@ -1,132 +1,169 @@
 <template>
-    <div class="main__content_tasks">
-        <div class="result-container">
-            <div class="header">
-                <h1>{{ result_constants.TITLE_TASKS }}</h1>
-                <div class="header-right">
-                    <button @click="toggleNotifications" class="notifications-button">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span v-if="unreadNotificationsCount > 0" class="notification-badge">{{ unreadNotificationsCount }}</span>
-                    </button>
-                    <button @click="handleLogout" class="logout-button">
-                        <span>{{ result_constants.LOGOUT }}</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M16 17L21 12L16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
+    <div class="main-container">
 
-            <div v-if="loading" class="loading">
-                <div class="spinner"></div>
-                <span>{{ result_constants.DOWNLOAD_DATA }}</span>
-            </div>
-            
-            <div v-else>
-                <!-- Notifications panel -->
-                <div v-if="showNotifications" class="notifications-panel">
-                    <div class="notifications-header">
-                        <h3>Уведомления</h3>
-                        <button @click="markAllAsRead" class="mark-read-button">Отметить все как прочитанные</button>
-                    </div>
-                    <div v-if="notifications.length > 0" class="notifications-list">
-                        <div v-for="notification in notifications" :key="notification.id" 
-                             class="notification-item" :class="{ 'unread': !notification.isRead }"
-                             @click="viewNotification(notification)">
-                            <div class="notification-content">
-                                <h4>{{ notification.title }}</h4>
-                                <p>{{ notification.body }}</p>
-                                <span class="notification-time">{{ formatNotificationDate(notification.createdAt) }}</span>
-                            </div>
-                            <div v-if="!notification.isRead" class="unread-dot"></div>
-                        </div>
-                    </div>
-                    <div v-else class="no-notifications">
-                        Нет уведомлений
-                    </div>
-                </div>
-
-                <div class="filters">
-                    <div class="select-wrapper">
-                        <select v-model="pageSize" @change="fetchTasks" class="custom-select">
-                            <option value="5">{{ result_constants.FIVE_TASKS }}</option>
-                            <option value="10">{{ result_constants.TEN_TASKS }}</option>
-                            <option value="20">{{ result_constants.TWENTY_TASKS }}</option>
-                        </select>
-                        <div class="select-arrow"></div>
-                    </div>
-                    
-                    <div class="pagination">
-                        <button @click="prevPage" :disabled="currentPage === 1" class="pagination-button">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                        <span class="pagination-info">Страница {{ currentPage }} из {{ totalPages }}</span>
-                        <button @click="nextPage" :disabled="currentPage === totalPages" class="pagination-button">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <div class="tasks-container">
+            <div class="result-container">
+                <div class="header">
+                    <h1>{{ result_constants.TITLE_TASKS }}</h1>
+                    <div class="header-right">
+                        <button @click="handleLogout" class="logout-button">
+                            <span>{{ result_constants.LOGOUT }}</span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                                <path d="M16 17L21 12L16 7" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
                             </svg>
                         </button>
                     </div>
                 </div>
 
-                <div class="tasks-list">
-                    <div v-for="task in tasks" :key="task.contentBlock.id" class="task-card" :class="{'task-test': task.kind === 'TEST'}">
-                        <div class="task-header">
-                            <h3>{{ task.contentBlock.name }}</h3>
-                            <span class="task-badge">{{ task.kind === 'TASK' ? '📝 Задание' : '🧪 Тест' }}</span>
+                <div v-if="loading" class="loading">
+                    <div class="spinner"></div>
+                    <span>{{ result_constants.DOWNLOAD_DATA }}</span>
+                </div>
+
+                <div v-else>
+                    <div class="filters">
+                        <div class="select-wrapper">
+                            <select v-model="pageSize" @change="fetchTasks" class="custom-select">
+                                <option value="5">{{ result_constants.FIVE_TASKS }}</option>
+                                <option value="10">{{ result_constants.TEN_TASKS }}</option>
+                                <option value="20">{{ result_constants.TWENTY_TASKS }}</option>
+                            </select>
+                            <div class="select-arrow"></div>
                         </div>
-                        <div class="task-discipline">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 2L3 7L12 12L21 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M3 17L12 22L21 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M3 12L12 17L21 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            <span>{{ task.topic?.chapter?.discipline?.name || 'Без дисциплины' }}</span>
-                        </div>
-                        <div class="task-deadline">
-                            <div class="deadline-info">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M16 2V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M8 2V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M3 10H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+                        <div class="pagination">
+                            <button @click="prevPage" :disabled="currentPage === 1" class="pagination-button">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
-                                <span>{{ formatDate(task.taskDeadline) }}</span>
-                            </div>
-                            <div v-if="daysLeft(task.taskDeadline)" class="days-left" :class="{
-                                'warning': daysLeft(task.taskDeadline) <= 3,
-                                'danger': daysLeft(task.taskDeadline) <= 1
-                            }">
-                                {{ daysLeft(task.taskDeadline) }} {{ dayForm(daysLeft(task.taskDeadline)) }}
-                            </div>
+                            </button>
+                            <span class="pagination-info">Страница {{ currentPage }} из {{ totalPages }}</span>
+                            <button @click="nextPage" :disabled="currentPage === totalPages" class="pagination-button">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
                         </div>
-                        <button @click="viewTaskDetails(task)" class="view-button">
-                            <span>{{ result_constants.DETAILED }}</span>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M15 12L12 12M12 12L9 12M12 12L12 9M12 12L12 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                <path d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
+                    </div>
+
+                    <div class="tasks-list">
+                        <div v-for="task in tasks" :key="task.contentBlock.id" class="task-card"
+                            :class="{ 'task-test': task.kind === 'TEST' }">
+                            <div class="task-header">
+                                <h3>{{ task.contentBlock.name }}</h3>
+                                <span class="task-badge">{{ task.kind === 'TASK' ? '📝 Задание' : '🧪 Тест' }}</span>
+                            </div>
+                            <div class="task-discipline">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2L3 7L12 12L21 7L12 2Z" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M3 17L12 22L21 17" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M3 12L12 17L21 12" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <span>{{ task.topic?.chapter?.discipline?.name || 'Без дисциплины' }}</span>
+                            </div>
+                            <div class="task-deadline">
+                                <div class="deadline-info">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round" />
+                                        <path d="M16 2V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round" />
+                                        <path d="M8 2V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round" />
+                                        <path d="M3 10H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round" />
+                                    </svg>
+                                    <span>{{ formatDate(task.taskDeadline) }}</span>
+                                </div>
+                                <div v-if="daysLeft(task.taskDeadline)" class="days-left" :class="{
+                                    'warning': daysLeft(task.taskDeadline) <= 3,
+                                    'danger': daysLeft(task.taskDeadline) <= 1
+                                }">
+                                    {{ daysLeft(task.taskDeadline) }} {{ dayForm(daysLeft(task.taskDeadline)) }}
+                                </div>
+                            </div>
+                            <button @click="viewTaskDetails(task)" class="view-button">
+                                <span>{{ result_constants.DETAILED }}</span>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M15 12L12 12M12 12L9 12M12 12L12 9M12 12L12 15" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" />
+                                    <path
+                                        d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3Z"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="selectedTask" class="modal">
+                    <div class="modal-content">
+                        <span class="close" @click="selectedTask = null">&times;</span>
+                        <h2>{{ selectedTask.contentBlock.name }}</h2>
+                        <div class="modal-body" v-html="taskDetailsHtml"></div>
+                        <div class="modal-actions">
+                            <button class="modal-button close-button" @click="selectedTask = null">Закрыть</button>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <div v-if="selectedTask" class="modal">
-                <div class="modal-content">
-                    <span class="close" @click="selectedTask = null">&times;</span>
-                    <h2>{{ selectedTask.contentBlock.name }}</h2>
-                    <div class="modal-body" v-html="taskDetailsHtml"></div>
-                    <div class="modal-actions">
-                        <button class="modal-button close-button" @click="selectedTask = null">Закрыть</button>
-                    </div>
+        </div>
+
+
+        <div class="notifications-container">
+            <div class="contact_dev">
+                <div class="github_repository">
+                    <a href="https://yandex.ru/images/search?from=tabbar&text=natsuki%20ddlc%20art" target="_blank" >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.195 22 16.418 22 12.017 22 6.484 17.522 2 12 2z" />
+                        </svg>
+                        
+                        <span>GitHub repository</span>
+                    </a>
                 </div>
+            </div>
+
+            <div class="notifications-header">
+                <h2>Уведомления</h2>
+                <button @click="markAllAsRead" class="mark-read-button">Прочитать все</button>
+            </div>
+
+            <div v-if="notifications.length > 0" class="notifications-list">
+                <div v-for="notification in notifications" :key="notification.id" class="notification-item"
+                    :class="{ 'unread': !notification.isRead }" @click="viewNotification(notification)">
+                    <div class="notification-content">
+                        <h4>{{ notification.title }}</h4>
+                        <p>{{ notification.body }}</p>
+                        <span class="notification-time">{{ formatNotificationDate(notification.createdAt) }}</span>
+                    </div>
+                    <div v-if="!notification.isRead" class="unread-dot"></div>
+                </div>
+            </div>
+            <div v-else class="no-notifications">
+                Нет новых уведомлений
             </div>
 
             <div v-if="selectedNotification" class="modal">
@@ -148,7 +185,6 @@
         </div>
     </div>
 </template>
-
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
@@ -159,8 +195,7 @@ export default {
     setup() {
         const authStore = useAuthStore()
         const router = useRouter()
-        
-        // State
+
         const tasks = ref([])
         const loading = ref(true)
         const currentPage = ref(1)
@@ -172,20 +207,19 @@ export default {
         const showNotifications = ref(false)
         const selectedNotification = ref(null)
         const error = ref(null)
-        
+
         const apiUrl = 'https://api.newlxp.ru/graphql'
 
-        // Computed
+
         const unreadNotificationsCount = computed(() => {
             return notifications.value.filter(n => !n.isRead).length
         })
 
-        // Methods
         const fetchTasks = async () => {
             try {
                 loading.value = true
                 error.value = null
-                
+
                 if (!authStore.user?.id) {
                     throw new Error('User ID not found')
                 }
@@ -226,7 +260,7 @@ export default {
                         }
                     }
                 `
-                
+
                 const variables = {
                     input: {
                         studentId: authStore.user.id,
@@ -235,7 +269,7 @@ export default {
                         filters: { fromArchivedDiscipline: false }
                     }
                 }
-                
+
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
@@ -244,13 +278,13 @@ export default {
                     },
                     body: JSON.stringify({ query, variables })
                 })
-                
+
                 const data = await response.json()
-                
+
                 if (data.errors) {
                     throw new Error(data.errors[0].message)
                 }
-                
+
                 tasks.value = data.data.studentAvailableTasks.items
                 totalPages.value = data.data.studentAvailableTasks.totalPages
             } catch (err) {
@@ -281,7 +315,7 @@ export default {
                         }
                     }
                 `
-                
+
                 const variables = {
                     input: {
                         filters: {},
@@ -289,7 +323,7 @@ export default {
                         pageSize: 10
                     }
                 }
-                
+
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
@@ -298,13 +332,13 @@ export default {
                     },
                     body: JSON.stringify({ query, variables })
                 })
-                
+
                 const data = await response.json()
-                
+
                 if (data.errors) {
                     throw new Error(data.errors[0].message)
                 }
-                
+
                 notifications.value = data.data.notifications.items
                 authStore.unreadNotificationsCount = data.data.notifications.items.filter(n => !n.isRead).length
             } catch (err) {
@@ -327,7 +361,7 @@ export default {
                         }
                     }
                 `
-                
+
                 const variables = {
                     input: {
                         contentId: task.contentBlock.id,
@@ -335,26 +369,26 @@ export default {
                     },
                     studentId: authStore.user.id
                 }
-                
+
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${authStore.token}`
                     },
-                    body: JSON.stringify({ 
+                    body: JSON.stringify({
                         operationName: "GetDisciplineTaskBlockByTopicIdAndContentId",
-                        query, 
-                        variables 
+                        query,
+                        variables
                     })
                 })
-                
+
                 const data = await response.json()
-                
+
                 if (data.errors) {
                     throw new Error(data.errors[0].message)
                 }
-                
+
                 const taskDetails = data.data.getDisciplineTaskBlockByTopicIdAndContentId
                 taskDetailsHtml.value = formatTaskDetails(taskDetails)
                 selectedTask.value = task
@@ -381,12 +415,12 @@ export default {
                     </span>
                 </div>
             </div>`
-            
+
             if (task.body) {
                 try {
                     const bodyJson = JSON.parse(task.body)
                     html += `<div class="task-body">`
-                    
+
                     bodyJson.forEach(item => {
                         if (item.type === 'paragraph' && item.data?.text) {
                             html += `<p>${item.data.text}</p>`
@@ -394,14 +428,14 @@ export default {
                             html += `<h3>${item.data.text}</h3>`
                         }
                     })
-                    
+
                     html += `</div>`
                 } catch (e) {
                     console.error('Error parsing task body:', e)
                     html += `<div class="task-body"><p>${task.body}</p></div>`
                 }
             }
-            
+
             return html
         }
 
@@ -416,7 +450,7 @@ export default {
                 minute: '2-digit'
             })
         }
-
+        
         const formatNotificationDate = (dateString) => {
             if (!dateString) return ''
             const date = new Date(dateString)
@@ -453,13 +487,13 @@ export default {
                         }
                     }
                 `
-                
+
                 const variables = {
                     input: {
                         notificationId
                     }
                 }
-                
+
                 await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
@@ -468,7 +502,7 @@ export default {
                     },
                     body: JSON.stringify({ query, variables })
                 })
-                
+
                 const index = notifications.value.findIndex(n => n.id === notificationId)
                 if (index !== -1) {
                     notifications.value[index].isRead = true
@@ -483,9 +517,9 @@ export default {
                 const unreadIds = notifications.value
                     .filter(n => !n.isRead)
                     .map(n => n.id)
-                
+
                 if (unreadIds.length === 0) return
-                
+
                 const query = `
                     mutation MarkNotificationsAsRead($input: MarkNotificationsAsReadInput!) {
                         markNotificationsAsRead(input: $input) {
@@ -493,13 +527,13 @@ export default {
                         }
                     }
                 `
-                
+
                 const variables = {
                     input: {
                         notificationIds: unreadIds
                     }
                 }
-                
+
                 await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
@@ -508,7 +542,7 @@ export default {
                     },
                     body: JSON.stringify({ query, variables })
                 })
-                
+
                 notifications.value = notifications.value.map(n => ({
                     ...n,
                     isRead: true
@@ -559,7 +593,7 @@ export default {
             router.push('/login')
         }
 
-        // Lifecycle hooks
+
         onMounted(() => {
             if (!authStore.token) {
                 router.push('/login')
@@ -567,7 +601,15 @@ export default {
                 fetchTasks()
                 fetchNotifications()
             }
+
+            window.addEventListener('toggle-notifications', () => {
+                showNotifications.value = !showNotifications.value
+                if (showNotifications.value && notifications.value.length === 0) {
+                    fetchNotifications()
+                }
+            })
         })
+
 
         return {
             tasks,
@@ -583,8 +625,8 @@ export default {
             unreadNotificationsCount,
             error,
             result_constants,
-            
-       
+
+
             fetchTasks,
             fetchNotifications,
             markAllAsRead,
@@ -603,95 +645,89 @@ export default {
     }
 }
 </script>
-
 <style scoped>
-
-.header-right {
+.main-container {
     display: flex;
-    align-items: center;
-    gap: 15px;
+    min-height: 100vh;
+    background-color: #1a1a1a;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.notifications-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    position: relative;
-    padding: 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.tasks-container {
+    flex: 1;
+    padding: 90px 15px 15px 15px;
+    user-select: none;
+    max-width: calc(100% - 400px);
 }
 
-.notification-badge {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background-color: #ff4757;
-    color: white;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-weight: bold;
-}
-
-.notifications-panel {
-    position: absolute;
-    right: 20px;
-    top: 70px;
-    width: 350px;
-    max-height: 500px;
+.notifications-container {
+    width: 400px;
+    background-color: #252525;
+    padding: 90px 20px 20px 20px;
+    border-left: 1px solid #3a3a3a;
+    height: 100vh;
     overflow-y: auto;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 100;
-    padding: 15px;
+    position: sticky;
+    top: 0;
 }
 
 .notifications-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.notifications-header h2 {
+    font-size: 20px;
+    color: #ffffff;
+    margin: 0;
 }
 
 .mark-read-button {
     background: none;
-    border: none;
-    color: #3498db;
+    border: 1px solid #5670d0;
+    color: #5670d0;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.mark-read-button:hover {
+    background-color: rgba(86, 112, 208, 0.1);
 }
 
 .notifications-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 .notification-item {
-    padding: 10px;
-    border-radius: 6px;
+    background-color: #333333;
+    border-radius: 8px;
+    padding: 15px;
     cursor: pointer;
+    transition: all 0.2s;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    transition: background-color 0.2s;
+    position: relative;
+    min-height: 80px;
+    max-height: 120px;
+    overflow: hidden;
 }
 
+
 .notification-item:hover {
-    background-color: #f8f9fa;
+    background-color: #3a3a3a;
 }
 
 .notification-item.unread {
-    background-color: #f1f8ff;
+    border-left: 3px solid #5670d0;
 }
 
 .notification-content {
@@ -699,53 +735,52 @@ export default {
 }
 
 .notification-content h4 {
-    margin: 0 0 5px 0;
-    font-size: 14px;
+    margin: 0 0 8px 0;
+    font-size: 15px;
+    color: #ffffff;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .notification-content p {
-    margin: 0 0 5px 0;
-    font-size: 13px;
-    color: #555;
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #b0b0b0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 40px;
 }
 
+
 .notification-time {
-    font-size: 11px;
-    color: #999;
+    font-size: 12px;
+    color: #707070;
 }
 
 .unread-dot {
-    width: 8px;
-    height: 8px;
-    background-color: #3498db;
+    width: 10px;
+    height: 10px;
+    background-color: #5670d0;
     border-radius: 50%;
     margin-left: 10px;
+    margin-top: 8px;
+    flex-shrink: 0;
 }
 
 .no-notifications {
     text-align: center;
-    padding: 20px;
-    color: #999;
-}
-
-.notification-meta {
-    margin-top: 15px;
-    font-size: 13px;
-    color: #666;
-    display: flex;
-    justify-content: space-between;
-}
-
-
-.main__content_tasks {
-    width: 100%;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    padding: 90px 15px 15px 15px;
-    user-select: none;
-    background-color: #1a1a1a;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 40px 20px;
+    color: #707070;
+    font-size: 14px;
+    background-color: #333333;
+    border-radius: 8px;
 }
 
 .result-container {
@@ -775,6 +810,12 @@ export default {
     letter-spacing: -0.5px;
 }
 
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
 .logout-button {
     display: flex;
     align-items: center;
@@ -798,7 +839,40 @@ export default {
 .logout-button svg {
     transition: transform 0.2s ease;
 }
+.contact_dev {
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #333333;
+    border-radius: 8px;
+   
+}
 
+.contact_dev:hover{
+    box-shadow: 1px 1px 15px  #5670d0;
+}
+
+.github_repository a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 30px;
+    font-weight: 500;
+    transition: all 0.2s;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+
+
+.github_repository span {
+    font-family: Inter, sans-serif;
+    font-style: normal;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 700;
+}
 .logout-button:hover svg {
     transform: translateX(2px);
 }
@@ -824,8 +898,13 @@ export default {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .filters {
@@ -1098,6 +1177,7 @@ export default {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1168,7 +1248,6 @@ export default {
     background-color: #4a4a4a;
 }
 
-/* Custom scrollbar styles */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -1196,7 +1275,6 @@ export default {
     background: #5670d0;
 }
 
-/* Task details HTML content styles */
 :deep(.task-meta-grid) {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -1250,36 +1328,56 @@ export default {
     margin: 20px 0 10px 0;
 }
 
+@media (max-width: 1200px) {
+    .main-container {
+        flex-direction: column;
+    }
+
+    .tasks-container {
+        max-width: 100%;
+        padding: 90px 15px 15px 15px;
+    }
+
+    .notifications-container {
+        width: 100%;
+        height: auto;
+        max-height: 400px;
+        border-left: none;
+        border-top: 1px solid #3a3a3a;
+        padding: 20px;
+    }
+}
+
 @media (max-width: 768px) {
     .result-container {
         padding: 15px;
     }
-    
+
     .header h1 {
         font-size: 22px;
     }
-    
+
     .tasks-list {
         grid-template-columns: 1fr;
     }
-    
+
     .filters {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .select-wrapper {
         width: 100%;
     }
-    
+
     .pagination {
         justify-content: center;
     }
-    
+
     .modal-content {
         width: 95%;
     }
-    
+
     :deep(.task-meta-grid) {
         grid-template-columns: 1fr;
     }

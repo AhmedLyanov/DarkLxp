@@ -2,7 +2,7 @@
   "name": "darklxp",
   "productName": "darklxp",
   "version": "1.0.0",
-  "description": "darklxp",
+  "description": "hidden aside newlxp",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
