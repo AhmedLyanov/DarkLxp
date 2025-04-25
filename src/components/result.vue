@@ -133,7 +133,7 @@
 
         <div class="notifications-container">
             <div class="contact_dev">
-                <a href="" target="_blank">
+                <a href="https://github.com/AhmedLyanov/DarkLxp" target="_blank">
                     <div class="github_repository">
 
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"

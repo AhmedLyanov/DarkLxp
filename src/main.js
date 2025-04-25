@@ -12,7 +12,10 @@ if (started) {
     },
     show: false, 
   });
-
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.send('network-status', navigator.onLine)
+  })
+  
   mainWindow.on('ready-to-show', () => {
     mainWindow.maximize();  
     mainWindow.show();    
@@ -31,7 +34,13 @@ if (started) {
 app.whenReady().then(() => {
   createWindow();
 
+  app.on('online', () => {
+    mainWindow.webContents.send('network-status', true)
+  })
   
+  app.on('offline', () => {
+    mainWindow.webContents.send('network-status', false)
+  })
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();

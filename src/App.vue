@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <NetworkStatus />
     <Header/>
     <router-view />
     <fixedMusic />
@@ -10,8 +11,7 @@
 import { useRoute } from 'vue-router'
 import Header from './components/header.vue'
 import fixedMusic from './components/fixedMusic.vue'
+import NetworkStatus from './components/NetworkStatus.vue' 
 
 const route = useRoute()
-
-
 </script>
